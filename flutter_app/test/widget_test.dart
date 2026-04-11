@@ -11,7 +11,7 @@ class FakeApiService extends ApiService {
     return const BackendHealth(
       ready: true,
       samplesIndexed: 42,
-      classifierAvailable: false,
+      classifierAvailable: true,
     );
   }
 
@@ -40,6 +40,7 @@ class FakeApiService extends ApiService {
       SimilarImage(
         filename: 'demo-1.jpg',
         label: 'tralalero_tralala',
+        displayLabel: 'Tralalero Tralala',
         distance: 0.0,
         kmeansCluster: 1,
         rawRelativePath: 'brainrot_dataset/tralalero_tralala/demo-1.jpg',
@@ -49,6 +50,7 @@ class FakeApiService extends ApiService {
       SimilarImage(
         filename: 'demo-2.jpg',
         label: 'tung_tung_sahur',
+        displayLabel: 'Tung Tung Sahur',
         distance: 0.1,
         kmeansCluster: 2,
         rawRelativePath: 'brainrot_dataset/tung_tung_sahur/demo-2.jpg',
@@ -65,10 +67,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('BrainrotVision'), findsOneWidget);
-    expect(find.text('Use Random Dataset Image'), findsOneWidget);
-    expect(find.text('Try Sample Demo'), findsOneWidget);
-    expect(find.text('Choose From Gallery'), findsOneWidget);
-    expect(find.text('Live Sample Gallery'), findsOneWidget);
+    expect(find.text('Detect Random Brainrot'), findsOneWidget);
+    expect(find.text('Try Recognition Demo'), findsOneWidget);
+    expect(find.text('Upload For Recognition'), findsOneWidget);
+    expect(find.text('Known Identity Gallery'), findsOneWidget);
     expect(find.text('Dataset Insights'), findsOneWidget);
   });
 }

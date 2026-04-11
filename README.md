@@ -1,12 +1,12 @@
 # BrainrotVision
 
-BrainrotVision is a local-first computer vision project for exploratory analysis, clustering, similarity retrieval, and optional classification over the Italian brainrot image dataset from Kaggle [`bubblepw/italian-brainrot-images`](https://www.kaggle.com/datasets/bubblepw/italian-brainrot-images).
+BrainrotVision is a local-first computer vision project for exploratory analysis, clustering, similarity retrieval, and known-class brainrot identity detection over the Italian brainrot image dataset from Kaggle [`bubblepw/italian-brainrot-images`](https://www.kaggle.com/datasets/bubblepw/italian-brainrot-images).
 
 The repo contains:
 
 - a shared Python package for data ingestion, EDA, embeddings, clustering, and inference
 - a FastAPI backend for local analysis APIs
-- a Flutter app for one-tap sample demos, image upload, results, and dataset insights
+- a Flutter app for one-tap brainrot recognition demos, image upload, results, and dataset insights
 - documentation, automation, and validation scripts
 
 ## Repository Layout

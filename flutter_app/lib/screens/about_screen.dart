@@ -9,22 +9,27 @@ class AboutScreen extends StatelessWidget {
       {
         'title': 'Project Goal',
         'body':
-            'BrainrotVision treats the dataset as a computer vision analysis problem: build metadata, inspect image quality, cluster visual themes, and retrieve the closest examples for any uploaded image.',
+            'BrainrotVision turns the dataset into a known-class brainrot identity detection problem: build metadata, inspect quality, train a lightweight recognizer, and support each prediction with nearest-neighbor evidence.',
       },
       {
-        'title': 'Core Stack',
+        'title': 'Known Brainrot Identities',
         'body':
-            'FastAPI serves the inference API, a shared Python package handles embeddings and artifact generation, and Flutter provides the mobile-friendly client for upload and results.',
+            'The recognizer is trained on five dataset identities: Ballerina Cappuccina, Bombardino Crocodilo, Cappuccino Assassino, Tralalero Tralala, and Tung Tung Sahur.',
       },
       {
-        'title': 'Why Similarity First',
+        'title': 'Recognition Pipeline',
         'body':
-            'The dataset may not expose clean labels. Visual embeddings, KMeans clusters, and nearest-neighbor search stay useful even when labels are weak or absent.',
+            'A frozen ResNet50 embedding model feeds both the logistic regression classifier and the nearest-neighbor retrieval system. The app combines classifier probabilities, cluster assignment, and matching neighbors to explain why an identity was chosen.',
+      },
+      {
+        'title': 'Known-Class Limitation',
+        'body':
+            'This is not open-world recognition. The system identifies one of the known brainrot classes present in the dataset, so unknown or out-of-distribution images may still be forced into the closest known class.',
       },
       {
         'title': 'Current Limits',
         'body':
-            'Classification only appears when the folder structure supports it cleanly. Android support depends on a local SDK bootstrap in this environment.',
+            'Low-confidence results are softened as likely identities or best matches. Android support still depends on a writable local Flutter SDK in this environment.',
       },
     ];
 
@@ -42,7 +47,9 @@ class AboutScreen extends StatelessWidget {
                 children: [
                   Text(
                     section['title']!,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Text(section['body']!),

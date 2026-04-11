@@ -23,10 +23,12 @@
   - `POST /similar`
   - `POST /predict`
   - static thumbnail/raw mounts
+  - known-class recognition payloads with top-3 predictions, neighbor agreement, cluster alignment, and low-confidence wording
   - degraded startup mode when artifacts are missing
 - Built the Flutter app with:
   - home screen
   - one-click dataset demo actions and clickable sample gallery
+  - explicit Brainrot Identity Detection wording and human-friendly class names
   - image picker/camera entrypoints
   - preview screen
   - results screen

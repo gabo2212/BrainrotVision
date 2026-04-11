@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 import hashlib
 import json
 import random
@@ -39,6 +40,10 @@ DBSCAN_PATH = "dbscan.joblib"
 CLASSIFIER_PATH = "classifier.joblib"
 PROJECTION_PATH = "embedding_projection.csv"
 MANIFEST_PATH = "manifest.json"
+LOW_CONFIDENCE_THRESHOLD = 0.6
+LOW_CONFIDENCE_GAP_THRESHOLD = 0.12
+OPEN_SET_CONFIDENCE_THRESHOLD = 0.4
+OPEN_SET_NEIGHBOR_AGREEMENT_THRESHOLD = 0.4
 
 
 def _artifact_path(settings: AppSettings, name: str) -> Path:
@@ -50,6 +55,42 @@ def _choose_kmeans_clusters(settings: AppSettings, sample_count: int) -> int:
         return 0
     heuristic = int(np.sqrt(sample_count))
     return max(2, min(settings.kmeans_clusters, heuristic if heuristic > 1 else 2, sample_count))
+
+
+def _display_label(label: str | None) -> str | None:
+    if label is None:
+        return None
+    if pd.isna(label):
+        return None
+    parts = [part for part in str(label).replace("-", "_").split("_") if part]
+    if not parts:
+        return None
+    return " ".join(part.capitalize() for part in parts)
+
+
+def _build_cluster_profiles(metadata: pd.DataFrame) -> dict[int, dict[str, Any]]:
+    if metadata.empty or "kmeans_cluster" not in metadata.columns or "label" not in metadata.columns:
+        return {}
+
+    labelled = metadata[
+        metadata["kmeans_cluster"].notna() & metadata["label"].notna()
+    ].copy()
+    if labelled.empty:
+        return {}
+
+    profiles: dict[int, dict[str, Any]] = {}
+    for cluster_id, frame in labelled.groupby("kmeans_cluster"):
+        counts = frame["label"].astype(str).value_counts()
+        majority_label = str(counts.index[0])
+        majority_count = int(counts.iloc[0])
+        total_items = int(len(frame))
+        profiles[int(cluster_id)] = {
+            "majority_label": majority_label,
+            "majority_display_label": _display_label(majority_label),
+            "majority_ratio": round(majority_count / total_items, 4) if total_items else None,
+            "total_items": total_items,
+        }
+    return profiles
 
 
 def _fit_optional_classifier(metadata: pd.DataFrame, embeddings: np.ndarray) -> dict[str, Any] | None:
@@ -229,6 +270,7 @@ class ArtifactRuntime:
         self.kmeans = None
         self.classifier_bundle = None
         self.embeddings = None
+        self.cluster_profiles: dict[int, dict[str, Any]] = {}
         self.stats: dict[str, Any] = {
             "artifact_ready": False,
             "dataset_slug": settings.kaggle_dataset_slug,
@@ -241,6 +283,7 @@ class ArtifactRuntime:
                 if not self.valid.empty:
                     self.valid["embedding_row"] = self.valid["embedding_row"].astype(int)
                     self.valid = self.valid.sort_values("embedding_row").reset_index(drop=True)
+                    self.cluster_profiles = _build_cluster_profiles(self.valid)
 
             self.extractor = EmbeddingExtractor(device=settings.device)
             self.neighbors = self._safe_load_joblib(NN_MODEL_PATH)
@@ -307,9 +350,13 @@ class ArtifactRuntime:
     def _serialize_sample(self, record: dict[str, Any], distance: float | None = None) -> dict[str, Any]:
         raw_relative = record.get("raw_relative_path")
         thumbnail_path = record.get("thumbnail_path")
+        label = record.get("label")
+        if pd.isna(label):
+            label = None
         return {
             "filename": record.get("filename"),
-            "label": record.get("label"),
+            "label": label,
+            "display_label": _display_label(label),
             "kmeans_cluster": _maybe_int(record.get("kmeans_cluster")),
             "dbscan_cluster": _maybe_int(record.get("dbscan_cluster")),
             "width": _maybe_int(record.get("width")),
@@ -320,6 +367,161 @@ class ArtifactRuntime:
             "thumbnail_path": thumbnail_path,
             "raw_url": f"/raw/{raw_relative}" if raw_relative else None,
             "thumbnail_url": f"/thumbnails/{thumbnail_path}" if thumbnail_path else None,
+        }
+
+    def _classifier_status(self) -> str:
+        if self.classifier_bundle is None:
+            return "Unavailable for this dataset"
+        encoder = self.classifier_bundle["label_encoder"]
+        return f"Active on {len(encoder.classes_)} known dataset classes"
+
+    def _summarize_neighbor_agreement(
+        self,
+        predicted_label: str,
+        similar_images: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
+        labels = [str(item["label"]) for item in similar_images if item.get("label")]
+        if not labels:
+            return None
+
+        counts = Counter(labels)
+        majority_label, majority_count = counts.most_common(1)[0]
+        matching_neighbors = counts.get(predicted_label, 0)
+        total_neighbors = len(labels)
+        agreement_ratio = round(matching_neighbors / total_neighbors, 4)
+        return {
+            "agrees_with_prediction": majority_label == predicted_label,
+            "agreement_ratio": agreement_ratio,
+            "matching_neighbors": matching_neighbors,
+            "total_neighbors": total_neighbors,
+            "majority_label": majority_label,
+            "majority_display_label": _display_label(majority_label),
+        }
+
+    def _summarize_cluster_alignment(
+        self,
+        cluster_id: int | None,
+        predicted_label: str,
+    ) -> dict[str, Any] | None:
+        if cluster_id is None:
+            return None
+        profile = self.cluster_profiles.get(int(cluster_id))
+        if profile is None:
+            return {
+                "cluster_id": int(cluster_id),
+                "aligns_with_prediction": False,
+                "majority_label": None,
+                "majority_display_label": None,
+                "majority_ratio": None,
+            }
+        return {
+            "cluster_id": int(cluster_id),
+            "aligns_with_prediction": profile.get("majority_label") == predicted_label,
+            "majority_label": profile.get("majority_label"),
+            "majority_display_label": profile.get("majority_display_label"),
+            "majority_ratio": profile.get("majority_ratio"),
+        }
+
+    def _build_classification_payload(
+        self,
+        embedding: np.ndarray,
+        *,
+        cluster_id: int | None,
+        similar_images: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
+        if self.classifier_bundle is None:
+            return None
+
+        model = self.classifier_bundle["model"]
+        encoder = self.classifier_bundle["label_encoder"]
+        probabilities = model.predict_proba(embedding)[0]
+        ranked_indices = np.argsort(probabilities)[::-1]
+        top_predictions: list[dict[str, Any]] = []
+        for class_index in ranked_indices[:3]:
+            label = str(encoder.inverse_transform([int(class_index)])[0])
+            top_predictions.append(
+                {
+                    "class_id": int(class_index),
+                    "label": label,
+                    "display_label": _display_label(label),
+                    "confidence": round(float(probabilities[int(class_index)]), 4),
+                }
+            )
+
+        winner = top_predictions[0]
+        runner_up = top_predictions[1] if len(top_predictions) > 1 else None
+        confidence_gap = round(
+            winner["confidence"] - (runner_up["confidence"] if runner_up else 0.0),
+            4,
+        )
+        neighbor_agreement = self._summarize_neighbor_agreement(winner["label"], similar_images)
+        cluster_alignment = self._summarize_cluster_alignment(cluster_id, winner["label"])
+
+        low_confidence = (
+            winner["confidence"] < LOW_CONFIDENCE_THRESHOLD
+            or confidence_gap < LOW_CONFIDENCE_GAP_THRESHOLD
+        )
+        open_set_warning = (
+            winner["confidence"] < OPEN_SET_CONFIDENCE_THRESHOLD
+            or (
+                neighbor_agreement is not None
+                and neighbor_agreement["agreement_ratio"] < OPEN_SET_NEIGHBOR_AGREEMENT_THRESHOLD
+            )
+        )
+        wording = "Detected Brainrot"
+        if open_set_warning:
+            wording = "Best Match"
+        elif low_confidence:
+            wording = "Likely Identity"
+
+        evidence = [
+            f"Classifier ranked {winner['display_label']} first at {winner['confidence'] * 100:.1f}%.",
+        ]
+        if runner_up is not None:
+            evidence.append(
+                f"The margin over {runner_up['display_label']} is {confidence_gap * 100:.1f} points."
+            )
+        if neighbor_agreement is not None:
+            evidence.append(
+                f"{neighbor_agreement['matching_neighbors']} of {neighbor_agreement['total_neighbors']} nearest neighbors are also {winner['display_label']}."
+            )
+        if cluster_alignment is not None and cluster_alignment.get("majority_display_label") is not None:
+            alignment_label = cluster_alignment["majority_display_label"]
+            if cluster_alignment["aligns_with_prediction"]:
+                evidence.append(
+                    f"Cluster {cluster_alignment['cluster_id']} is mostly {alignment_label} examples."
+                )
+            else:
+                evidence.append(
+                    f"Cluster {cluster_alignment['cluster_id']} is mostly {alignment_label}, which weakens the identity call."
+                )
+
+        warning_message = None
+        if open_set_warning:
+            warning_message = (
+                "Low confidence recognition: this image may sit outside the strongest known dataset patterns."
+            )
+        elif low_confidence:
+            warning_message = (
+                "This is the closest known identity, but the evidence is more mixed than usual."
+            )
+
+        return {
+            "class_id": winner["class_id"],
+            "label": winner["label"],
+            "display_label": winner["display_label"],
+            "confidence": winner["confidence"],
+            "classifier_available": True,
+            "classifier_status": self._classifier_status(),
+            "confidence_gap": confidence_gap,
+            "wording": wording,
+            "low_confidence": low_confidence,
+            "open_set_warning": open_set_warning,
+            "warning_message": warning_message,
+            "top_predictions": top_predictions,
+            "neighbor_agreement": neighbor_agreement,
+            "cluster_alignment": cluster_alignment,
+            "evidence": evidence,
         }
 
     def _analyze_pil_image(
@@ -339,6 +541,7 @@ class ArtifactRuntime:
             "format": image_format or image.format or "UNKNOWN",
             "brightness": round(brightness, 4),
             "contrast": round(contrast, 4),
+            "classifier_available": self.classifier_available,
             "cluster_id": None,
             "classification": None,
             "similar_images": [],
@@ -346,16 +549,6 @@ class ArtifactRuntime:
 
         if self.kmeans is not None:
             result["cluster_id"] = int(self.kmeans.predict(embedding)[0])
-
-        if self.classifier_bundle is not None:
-            model = self.classifier_bundle["model"]
-            encoder = self.classifier_bundle["label_encoder"]
-            probabilities = model.predict_proba(embedding)[0]
-            winner = int(np.argmax(probabilities))
-            result["classification"] = {
-                "label": str(encoder.inverse_transform([winner])[0]),
-                "confidence": round(float(probabilities[winner]), 4),
-            }
 
         if self.neighbors is not None and not self.valid.empty:
             distances, indices = self.neighbors.kneighbors(
@@ -366,6 +559,13 @@ class ArtifactRuntime:
                 self._serialize_sample(self.valid.iloc[int(index)].to_dict(), float(distance))
                 for distance, index in zip(distances[0], indices[0], strict=True)
             ]
+
+        if self.classifier_bundle is not None:
+            result["classification"] = self._build_classification_payload(
+                embedding,
+                cluster_id=result["cluster_id"],
+                similar_images=result["similar_images"],
+            )
 
         return result
 

@@ -14,9 +14,11 @@ class PreviewScreen extends StatelessWidget {
       builder: (context, state, _) {
         final selectedImage = state.selectedImage;
         return Scaffold(
-          appBar: AppBar(title: const Text('Preview')),
+          appBar: AppBar(title: const Text('Recognition Preview')),
           body: selectedImage == null
-              ? const Center(child: Text('Select an image from the home screen first.'))
+              ? const Center(
+                  child: Text('Select an image from the home screen first.'),
+                )
               : Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -34,38 +36,46 @@ class PreviewScreen extends StatelessWidget {
                       const SizedBox(height: 20),
                       Text(
                         selectedImage.name,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 12),
                       FilledButton.icon(
                         onPressed: state.isAnalyzing
                             ? null
                             : () async {
-                                final success = await context.read<AppState>().analyzeSelectedImage();
+                                final success = await context
+                                    .read<AppState>()
+                                    .analyzeSelectedImage();
                                 if (!context.mounted || !success) {
                                   return;
                                 }
                                 await Navigator.of(context).push(
-                                  MaterialPageRoute<void>(builder: (_) => const ResultsScreen()),
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const ResultsScreen(),
+                                  ),
                                 );
                               },
                         icon: state.isAnalyzing
                             ? const SizedBox.square(
                                 dimension: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.auto_awesome_mosaic_outlined),
-                        label: Text(state.isAnalyzing ? 'Analyzing...' : 'Analyze Image'),
+                        label: Text(
+                          state.isAnalyzing
+                              ? 'Detecting Identity...'
+                              : 'Detect Brainrot Identity',
+                        ),
                       ),
                       if (state.errorMessage != null) ...[
                         const SizedBox(height: 12),
                         Text(
                           state.errorMessage!,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: const Color(0xFF8E2E1B),
-                              ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: const Color(0xFF8E2E1B)),
                         ),
                       ],
                     ],

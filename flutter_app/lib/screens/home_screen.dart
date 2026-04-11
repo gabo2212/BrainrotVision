@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'A local-first computer vision demo for clustering, retrieval, and optional classification of Italian brainrot images.',
+                      'A local-first brainrot identity detector for the known classes inside the Italian brainrot dataset.',
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: const Color(0xFF36544E),
                       ),
@@ -120,14 +120,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'Start instantly or bring your own image',
+                              'Brainrot identity detection',
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Run a live dataset-backed demo in one tap, or upload a meme image to inspect its cluster, label, and nearest neighbors.',
+                              'Run a live recognition demo in one tap, or upload a meme image to detect which known brainrot identity it most closely matches.',
                               style: theme.textTheme.bodyLarge,
                             ),
                             const SizedBox(height: 20),
@@ -147,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   label: Text(
                                     state.isAnalyzing
                                         ? 'Running Demo...'
-                                        : 'Use Random Dataset Image',
+                                        : 'Detect Random Brainrot',
                                   ),
                                 ),
                                 FilledButton.tonalIcon(
@@ -159,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               appState.runSampleDemo(),
                                         ),
                                   icon: const Icon(Icons.play_circle_outline),
-                                  label: const Text('Try Sample Demo'),
+                                  label: const Text('Try Recognition Demo'),
                                 ),
                                 OutlinedButton.icon(
                                   onPressed: demoBusy
@@ -183,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   icon: const Icon(
                                     Icons.photo_library_outlined,
                                   ),
-                                  label: const Text('Choose From Gallery'),
+                                  label: const Text('Upload For Recognition'),
                                 ),
                                 FilledButton.tonalIcon(
                                   onPressed:
@@ -194,13 +194,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ImageSource.camera,
                                         ),
                                   icon: const Icon(Icons.camera_alt_outlined),
-                                  label: const Text('Take Photo'),
+                                  label: const Text('Capture For Recognition'),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Text(
-                              'Tap a sample below for a real backend call using the indexed brainrot dataset.',
+                              'Tap a sample below to run real identity detection against the indexed brainrot dataset.',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: const Color(0xFF36544E),
                               ),
@@ -237,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Live Sample Gallery',
+                                        'Known Identity Gallery',
                                         style: theme.textTheme.titleLarge
                                             ?.copyWith(
                                               fontWeight: FontWeight.w700,
@@ -245,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        'Each thumbnail runs analysis against the real dataset artifacts, not mock data.',
+                                        'Each thumbnail runs live recognition against real dataset artifacts, not mock data.',
                                         style: theme.textTheme.bodyMedium,
                                       ),
                                     ],
@@ -281,7 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                  'Sample thumbnails will appear here once the backend exposes indexed dataset images.',
+                                  'Sample identities will appear here once the backend exposes indexed dataset images.',
                                   style: theme.textTheme.bodyLarge,
                                 ),
                               )
@@ -451,7 +451,7 @@ class _SampleThumbCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  sample.label ?? sample.filename ?? 'Dataset sample',
+                  sample.displayName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(
@@ -460,7 +460,7 @@ class _SampleThumbCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  sample.filename ?? 'Tap to analyze',
+                  sample.filename ?? 'Tap to detect identity',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,

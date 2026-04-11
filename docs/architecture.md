@@ -39,6 +39,7 @@ This real dataset is balanced at 200 images per class, which is strong enough to
 
 - The backend reads generated metadata and artifact files from disk instead of retraining on startup.
 - Uploaded images go through the same preprocessing and embedding pipeline as dataset images.
+- The analysis response is recognition-first: it returns a known-class identity prediction, human-readable class labels, top-3 probabilities, neighbor agreement, cluster alignment, and softened wording for low-confidence matches.
 - Sample and thumbnail paths are served as static files so the Flutter app can render dataset examples directly.
 - When data or artifacts are missing, the backend starts in a degraded mode so `GET /health` and `GET /stats` still respond with a clear readiness message instead of crashing on startup.
 - With the current real dataset artifacts present, the backend now serves a fully ready mode including `POST /predict`.

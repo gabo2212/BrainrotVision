@@ -20,7 +20,13 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import LabelEncoder
 
 from .config import AppSettings
-from .dataset import build_metadata, extract_image_statistics, load_metadata, summarize_metadata
+from .dataset import (
+    build_metadata,
+    extract_image_statistics,
+    load_metadata,
+    resolve_dataset_root,
+    summarize_metadata,
+)
 from .embeddings import EmbeddingExtractor, normalize_embeddings
 from .utils import LOGGER, ensure_directories, write_json
 
@@ -185,6 +191,10 @@ def build_artifacts(settings: AppSettings) -> dict[str, Any]:
     stats = summarize_metadata(metadata)
     stats.update(
         {
+            "dataset_root": str(resolve_dataset_root(settings)),
+            "dataset_slug": settings.kaggle_dataset_slug,
+            "dataset_zip_path": str(settings.dataset_zip_path) if settings.dataset_zip_path.exists() else None,
+            "dataset_source": "repo_local_zip" if settings.dataset_zip_path.exists() else "filesystem",
             "kmeans_cluster_distribution": {
                 str(key): int(value)
                 for key, value in valid["kmeans_cluster"].value_counts().sort_index().items()

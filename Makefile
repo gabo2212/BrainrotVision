@@ -10,7 +10,7 @@ API_BASE_URL ?= http://127.0.0.1:8000
 help:
 	@printf "Available targets:\n"
 	@printf "  make setup            Create .venv and install Python dependencies\n"
-	@printf "  make data             Download the Kaggle dataset when auth is available\n"
+	@printf "  make data             Extract data/raw/brainrot_dataset.zip or fall back to Kaggle download\n"
 	@printf "  make metadata         Extract metadata and thumbnails\n"
 	@printf "  make eda              Generate EDA plots and reports\n"
 	@printf "  make artifacts        Build embeddings, search index, clusters, and optional classifier\n"

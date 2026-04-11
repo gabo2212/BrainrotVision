@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import zipfile
 
 from PIL import Image
 
@@ -41,6 +42,31 @@ def test_build_metadata_creates_files_and_infers_labels(tmp_path: Path):
     assert any(settings.thumbnails_dir.iterdir())
 
 
+def test_download_dataset_prefers_repo_local_zip(tmp_path: Path, monkeypatch):
+    monkeypatch.delenv("KAGGLE_USERNAME", raising=False)
+    monkeypatch.delenv("KAGGLE_KEY", raising=False)
+
+    data_dir = tmp_path / "data"
+    zip_path = data_dir / "raw" / "brainrot_dataset.zip"
+    zip_path.parent.mkdir(parents=True, exist_ok=True)
+
+    source_dir = tmp_path / "source"
+    _make_image(source_dir / "alpha" / "a.png", (255, 0, 0))
+    _make_image(source_dir / "beta" / "b.png", (0, 255, 0))
+
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        for path in sorted(source_dir.rglob("*")):
+            if path.is_file():
+                archive.write(path, path.relative_to(source_dir))
+
+    settings = AppSettings(_env_file=None, DATA_DIR=str(data_dir), ARTIFACTS_DIR=str(tmp_path / "artifacts"))
+    dataset_root = download_dataset(settings)
+
+    assert dataset_root == settings.extracted_dataset_dir
+    assert (settings.extracted_dataset_dir / "alpha" / "a.png").exists()
+    assert (settings.extracted_dataset_dir / "beta" / "b.png").exists()
+
+
 def test_download_dataset_without_credentials_raises_helpful_error(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.delenv("KAGGLE_USERNAME", raising=False)
@@ -50,6 +76,6 @@ def test_download_dataset_without_credentials_raises_helpful_error(tmp_path: Pat
     try:
         download_dataset(settings)
     except RuntimeError as exc:
-        assert "KAGGLE_USERNAME" in str(exc)
+        assert "Repo-local dataset zip was not found" in str(exc)
     else:
         raise AssertionError("download_dataset should require Kaggle credentials when none are configured")

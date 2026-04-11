@@ -35,6 +35,14 @@ class AppSettings(BaseSettings):
         return self.data_dir / "raw"
 
     @property
+    def dataset_zip_path(self) -> Path:
+        return self.raw_dir / "brainrot_dataset.zip"
+
+    @property
+    def extracted_dataset_dir(self) -> Path:
+        return self.raw_dir / "brainrot_dataset"
+
+    @property
     def processed_dir(self) -> Path:
         return self.data_dir / "processed"
 

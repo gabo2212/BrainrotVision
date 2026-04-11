@@ -4,7 +4,9 @@ import hashlib
 import os
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
+import shutil
 from typing import Any
 
 import imagehash
@@ -45,6 +47,11 @@ def resolve_dataset_root(settings: AppSettings) -> Path:
         raise FileNotFoundError(f"Raw data directory does not exist: {raw_dir}")
 
     if any(path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS for path in raw_dir.iterdir()):
+        return raw_dir
+
+    direct_child_dirs = [path for path in raw_dir.iterdir() if path.is_dir()]
+    image_rich_children = [path for path in direct_child_dirs if _count_image_files(path) > 0]
+    if len(image_rich_children) > 1:
         return raw_dir
 
     candidates = [path for path in raw_dir.rglob("*") if path.is_dir()]
@@ -238,6 +245,8 @@ def build_metadata(settings: AppSettings) -> pd.DataFrame:
     summary = summarize_metadata(metadata)
     summary["dataset_root"] = str(dataset_root)
     summary["dataset_slug"] = settings.kaggle_dataset_slug
+    summary["dataset_zip_path"] = str(settings.dataset_zip_path) if settings.dataset_zip_path.exists() else None
+    summary["dataset_source"] = "repo_local_zip" if settings.dataset_zip_path.exists() else "filesystem"
     write_json(settings.stats_json_path, summary)
     return metadata
 
@@ -260,9 +269,15 @@ def download_dataset(settings: AppSettings, force: bool = False) -> Path:
         except FileNotFoundError:
             pass
 
+    if settings.dataset_zip_path.exists():
+        dataset_root = extract_local_dataset_zip(settings, force=force)
+        LOGGER.info("Using repo-local dataset zip at %s", settings.dataset_zip_path)
+        return dataset_root
+
     if not has_kaggle_credentials():
         raise RuntimeError(
-            "Kaggle credentials were not found. Configure ~/.kaggle/kaggle.json or run "
+            f"Repo-local dataset zip was not found at {settings.dataset_zip_path}. "
+            "Configure ~/.kaggle/kaggle.json or run "
             "`KAGGLE_USERNAME=your_username KAGGLE_KEY=your_key make data`."
         )
 
@@ -293,4 +308,21 @@ def download_dataset(settings: AppSettings, force: bool = False) -> Path:
         )
     dataset_root = resolve_dataset_root(settings)
     LOGGER.info("Dataset downloaded to %s", dataset_root)
+    return dataset_root
+
+
+def extract_local_dataset_zip(settings: AppSettings, force: bool = False) -> Path:
+    zip_path = settings.dataset_zip_path
+    if not zip_path.exists():
+        raise FileNotFoundError(f"Dataset zip does not exist: {zip_path}")
+
+    target_dir = settings.extracted_dataset_dir
+    if force and target_dir.exists():
+        shutil.rmtree(target_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    with zipfile.ZipFile(zip_path, "r") as archive:
+        archive.extractall(target_dir)
+
+    dataset_root = resolve_dataset_root(settings)
     return dataset_root

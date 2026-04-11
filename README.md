@@ -1,6 +1,6 @@
 # BrainrotVision
 
-BrainrotVision is a local-first computer vision project for exploratory analysis, clustering, similarity retrieval, and optional classification over the Kaggle dataset [`bubblepw/italian-brainrot-images`](https://www.kaggle.com/datasets/bubblepw/italian-brainrot-images).
+BrainrotVision is a local-first computer vision project for exploratory analysis, clustering, similarity retrieval, and optional classification over the Italian brainrot image dataset from Kaggle [`bubblepw/italian-brainrot-images`](https://www.kaggle.com/datasets/bubblepw/italian-brainrot-images).
 
 The repo contains:
 
@@ -32,29 +32,68 @@ make setup
 
 This project uses a local `.venv` because the host Arch Linux Python environment is externally managed.
 
-### Dataset Download
+## Dataset Workflow
 
-If Kaggle authentication is already configured in `~/.kaggle/kaggle.json`, run:
+The repository now uses a repo-local raw dataset layout by default:
+
+- raw zip: `data/raw/brainrot_dataset.zip`
+- extracted images: `data/raw/brainrot_dataset/`
+- processed metadata and reports: `data/processed/`
+- thumbnails: `data/thumbnails/`
+- ML artifacts: `ml/artifacts/`
+
+On this machine, the source archive was copied from:
+
+```text
+/home/gablegoob/Downloads/brainrot_dataset.zip
+```
+
+To place a fresh local copy into the repo and extract it:
 
 ```bash
+cp /path/to/brainrot_dataset.zip data/raw/brainrot_dataset.zip
 make data
 ```
 
-If Kaggle auth is not configured yet, the fastest one-command path is:
-
-```bash
-KAGGLE_USERNAME=your_username KAGGLE_KEY=your_key make data
-```
-
-The downloader uses the dataset slug `bubblepw/italian-brainrot-images` and extracts into `data/raw/`.
+`make data` now prefers the repo-local zip automatically. If the zip is absent, it falls back to Kaggle download using the dataset slug `bubblepw/italian-brainrot-images`.
 
 ## Build the Pipeline
 
 ```bash
 make metadata
-make eda
 make artifacts
+make eda
 ```
+
+This order ensures the embedding projection plot is available during the EDA pass.
+
+To fully regenerate processed outputs from scratch:
+
+```bash
+rm -rf data/raw/brainrot_dataset data/thumbnails/* data/processed/* ml/artifacts/*
+cp /path/to/brainrot_dataset.zip data/raw/brainrot_dataset.zip
+make data
+make metadata
+make artifacts
+make eda
+```
+
+Expected generated artifacts include:
+
+- `data/processed/metadata.csv`
+- `data/processed/metadata.parquet`
+- `data/processed/dataset_stats.json`
+- `data/processed/reports/exact_duplicates.csv`
+- `data/processed/reports/near_duplicates.csv`
+- `data/processed/reports/eda_summary.md`
+- `data/processed/plots/*.png`
+- `ml/artifacts/embeddings.npy`
+- `ml/artifacts/nearest_neighbors.joblib`
+- `ml/artifacts/kmeans.joblib`
+- `ml/artifacts/dbscan.joblib`
+- `ml/artifacts/classifier.joblib`
+- `ml/artifacts/embedding_projection.csv`
+- `ml/artifacts/manifest.json`
 
 If you want to point the pipeline at a different data directory for testing or smoke validation, override `DATA_DIR` and `ARTIFACTS_DIR`:
 
@@ -140,8 +179,11 @@ Validation results on this machine:
 - `flutter analyze` passed.
 - `flutter test` passed.
 - `flutter build linux` succeeded.
-- FastAPI responded successfully in degraded mode without the Kaggle dataset.
-- A temporary smoke dataset successfully exercised metadata extraction, EDA generation, artifact building, and `POST /analyze`.
+- The repo-local dataset zip was copied into `data/raw/brainrot_dataset.zip`, extracted into `data/raw/brainrot_dataset/`, and processed successfully.
+- The real dataset produced `1000` valid images across `5` balanced classes.
+- FastAPI responded successfully with real dataset artifacts on `/health`, `/stats`, `/samples`, `/analyze`, `/similar`, and `/predict`.
+- The classifier trained cleanly on the real dataset and reached `0.8000` accuracy with `0.7993` macro-F1.
+- `flutter run -d linux --dart-define=API_BASE_URL=http://127.0.0.1:8012` launched successfully against the real dataset-backed backend.
 - Android SDK bootstrap succeeded, but `flutter build apk --debug` is still blocked by the read-only Arch-packaged Flutter SDK attempting to write Kotlin session data inside `/usr/lib/flutter`.
 
 ## Git Workflow

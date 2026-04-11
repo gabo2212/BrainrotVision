@@ -11,6 +11,21 @@ BrainrotVision is organized as a local-first, three-layer system:
 3. `flutter_app/`
    Flutter client for image selection, preview, analysis requests, and dataset insights.
 
+## Real Dataset Layout
+
+The current repository uses a repo-local raw dataset workflow:
+
+- source archive: `data/raw/brainrot_dataset.zip`
+- extracted dataset root: `data/raw/brainrot_dataset/`
+- class folders under the extracted root:
+  - `ballerina_cappuccina`
+  - `bombardino_crocodilo`
+  - `cappuccino_assassino`
+  - `tralalero_tralala`
+  - `tung_tung_sahur`
+
+This real dataset is balanced at 200 images per class, which is strong enough to enable the optional classifier on top of embeddings rather than leaving the system retrieval-only.
+
 ## Data and ML Decisions
 
 - The primary product is embeddings + similarity + clustering because the dataset may not have reliable labels.
@@ -18,6 +33,7 @@ BrainrotVision is organized as a local-first, three-layer system:
 - Similarity search uses cosine-based `NearestNeighbors`.
 - Clustering uses both KMeans and DBSCAN, with KMeans providing deployable cluster assignment for new uploads.
 - Classification is optional and only enabled when inferred folder labels are clean enough to train and evaluate a simple model responsibly.
+- With the integrated local dataset, folder labels are clean and balanced enough to train a lightweight classifier; the current embedding-based logistic regression model is active.
 
 ## Backend Decisions
 
@@ -25,6 +41,7 @@ BrainrotVision is organized as a local-first, three-layer system:
 - Uploaded images go through the same preprocessing and embedding pipeline as dataset images.
 - Sample and thumbnail paths are served as static files so the Flutter app can render dataset examples directly.
 - When data or artifacts are missing, the backend starts in a degraded mode so `GET /health` and `GET /stats` still respond with a clear readiness message instead of crashing on startup.
+- With the current real dataset artifacts present, the backend now serves a fully ready mode including `POST /predict`.
 
 ## Flutter Decisions
 

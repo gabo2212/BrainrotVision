@@ -4,6 +4,7 @@ import 'package:brainrotvision_flutter/screens/about_screen.dart';
 import 'package:brainrotvision_flutter/screens/insights_screen.dart';
 import 'package:brainrotvision_flutter/screens/preview_screen.dart';
 import 'package:brainrotvision_flutter/screens/results_screen.dart';
+import 'package:brainrotvision_flutter/screens/tripple_t_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -312,6 +313,67 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                           ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // ── Tripple T showcase card ───────────────────────────
+                    Card(
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const TrippleTScreen(),
+                          ),
+                        ),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Color(0xFF1A1A2E),
+                                Color(0xFF533483),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(20),
+                          child: Row(
+                            children: [
+                              const Text(
+                                '🪵',
+                                style: TextStyle(fontSize: 40),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Tripple T',
+                                      style: theme.textTheme.titleLarge
+                                          ?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Web gallery + live ML analysis for random brainrot images from the internet. Audio included.',
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(color: Colors.white70),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                color: Colors.white54,
+                                size: 18,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),

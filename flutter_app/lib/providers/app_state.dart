@@ -12,6 +12,7 @@ class AppState extends ChangeNotifier {
   final ImagePicker _picker = ImagePicker();
 
   XFile? selectedImage;
+  String? selectedSampleThumbnailUrl;
   AnalysisResult? analysis;
   DatasetStats? stats;
   BackendHealth? health;
@@ -86,6 +87,7 @@ class AppState extends ChangeNotifier {
         return false;
       }
       selectedImage = file;
+      selectedSampleThumbnailUrl = null;
       analysis = null;
       return true;
     } catch (error) {
@@ -129,9 +131,28 @@ class AppState extends ChangeNotifier {
     isAnalyzing = true;
     errorMessage = null;
     selectedImage = null;
+    selectedSampleThumbnailUrl = resolveUrl(sample.thumbnailUrl);
     notifyListeners();
     try {
       analysis = await _api.analyzeSample(rawRelativePath);
+      return true;
+    } catch (error) {
+      errorMessage = error.toString();
+      return false;
+    } finally {
+      isAnalyzing = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> analyzeExternalUrl(String url, {String? thumbnailUrl}) async {
+    isAnalyzing = true;
+    errorMessage = null;
+    selectedImage = null;
+    selectedSampleThumbnailUrl = thumbnailUrl ?? url;
+    notifyListeners();
+    try {
+      analysis = await _api.analyzeExternalUrl(url);
       return true;
     } catch (error) {
       errorMessage = error.toString();
@@ -172,6 +193,7 @@ class AppState extends ChangeNotifier {
 
   void clearSelection() {
     selectedImage = null;
+    selectedSampleThumbnailUrl = null;
     analysis = null;
     errorMessage = null;
     notifyListeners();

@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:brainrotvision_flutter/models/analysis_models.dart';
 import 'package:brainrotvision_flutter/providers/app_state.dart';
 import 'package:brainrotvision_flutter/screens/insights_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class ResultsScreen extends StatelessWidget {
@@ -29,6 +32,8 @@ class ResultsScreen extends StatelessWidget {
                         _RecognitionHeroCard(
                           classification: result.classification!,
                           clusterId: result.clusterId,
+                          imageFile: state.selectedImage,
+                          networkImageUrl: state.selectedSampleThumbnailUrl,
                         )
                       else
                         _ClassifierUnavailableCard(result: result),
@@ -88,41 +93,84 @@ class _RecognitionHeroCard extends StatelessWidget {
   const _RecognitionHeroCard({
     required this.classification,
     required this.clusterId,
+    this.imageFile,
+    this.networkImageUrl,
   });
 
   final ClassificationResult classification;
   final int? clusterId;
+  final XFile? imageFile;
+  final String? networkImageUrl;
 
   @override
   Widget build(BuildContext context) {
     final agreement = classification.neighborAgreement;
+    final hasImage = imageFile != null || (networkImageUrl != null && networkImageUrl!.isNotEmpty);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              classification.wording,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: const Color(0xFFC8623B),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              classification.displayName,
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF17322D),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Predicted Identity among the known brainrot classes in this dataset.',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(color: const Color(0xFF36544E)),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        classification.wording,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: const Color(0xFFC8623B),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        classification.displayName,
+                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF17322D),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Predicted Identity among the known brainrot classes in this dataset.',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: const Color(0xFF36544E),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (hasImage) ...[
+                  const SizedBox(width: 16),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: SizedBox(
+                      width: 110,
+                      height: 110,
+                      child: imageFile != null
+                          ? Image.file(
+                              File(imageFile!.path),
+                              fit: BoxFit.cover,
+                            )
+                          : Image.network(
+                              networkImageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const ColoredBox(
+                                    color: Color(0xFFE8D8C9),
+                                    child: Center(
+                                      child: Icon(Icons.broken_image_outlined),
+                                    ),
+                                  ),
+                            ),
+                    ),
+                  ),
+                ],
+              ],
             ),
             const SizedBox(height: 18),
             Wrap(

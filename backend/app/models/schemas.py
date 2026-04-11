@@ -87,6 +87,10 @@ class AnalyzeSampleRequest(BaseModel):
     raw_relative_path: str
 
 
+class AnalyzeUrlRequest(BaseModel):
+    url: str
+
+
 class SimilarResponse(BaseModel):
     filename: str
     cluster_id: int | None = None

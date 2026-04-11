@@ -67,6 +67,18 @@ class ApiService {
     );
   }
 
+  Future<AnalysisResult> analyzeExternalUrl(String url) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/analyze/url'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'url': url}),
+    );
+    _throwIfError(response);
+    return AnalysisResult.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
   Future<AnalysisResult> analyzeSample(String rawRelativePath) async {
     final response = await http.post(
       Uri.parse('$baseUrl/analyze/sample'),

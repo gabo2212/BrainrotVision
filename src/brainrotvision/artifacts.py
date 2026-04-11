@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import random
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -297,7 +298,10 @@ class ArtifactRuntime:
     def get_samples(self, limit: int = 12) -> list[dict[str, Any]]:
         if self.valid.empty:
             return []
-        records = self.valid.head(limit).to_dict(orient="records")
+        sample_size = min(limit, len(self.valid))
+        records = self.valid.sample(n=sample_size, random_state=random.randint(0, 1_000_000)).to_dict(
+            orient="records"
+        )
         return [self._serialize_sample(record) for record in records]
 
     def _serialize_sample(self, record: dict[str, Any], distance: float | None = None) -> dict[str, Any]:
@@ -374,6 +378,35 @@ class ArtifactRuntime:
             sha256 = hashlib.sha256(content).hexdigest()
             result["upload_sha256"] = sha256
             return result
+
+    def analyze_sample(self, raw_relative_path: str) -> dict[str, Any]:
+        if not raw_relative_path:
+            raise ValueError("A raw_relative_path value is required.")
+        if self.valid.empty:
+            raise ValueError("No indexed samples are available.")
+
+        matches = self.valid[self.valid["raw_relative_path"] == raw_relative_path]
+        if matches.empty:
+            raise FileNotFoundError(f"Dataset sample not found for path '{raw_relative_path}'.")
+
+        record = matches.iloc[0].to_dict()
+        image_path = self.settings.raw_dir / raw_relative_path
+        if not image_path.exists():
+            raise FileNotFoundError(f"Dataset sample file does not exist at '{raw_relative_path}'.")
+
+        with Image.open(image_path) as image:
+            image.load()
+            image_format = image.format
+            rgb = image.convert("RGB")
+            result = self._analyze_pil_image(
+                rgb,
+                filename=record.get("filename") or image_path.name,
+                image_format=image_format,
+            )
+
+        sha256 = record.get("sha256")
+        result["upload_sha256"] = None if pd.isna(sha256) else str(sha256)
+        return result
 
     def similar_bytes(self, content: bytes, filename: str | None = None) -> dict[str, Any]:
         result = self.analyze_bytes(content, filename=filename)

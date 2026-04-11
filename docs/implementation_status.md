@@ -19,12 +19,14 @@
   - `GET /stats`
   - `GET /samples`
   - `POST /analyze`
+  - `POST /analyze/sample`
   - `POST /similar`
   - `POST /predict`
   - static thumbnail/raw mounts
   - degraded startup mode when artifacts are missing
 - Built the Flutter app with:
   - home screen
+  - one-click dataset demo actions and clickable sample gallery
   - image picker/camera entrypoints
   - preview screen
   - results screen
@@ -48,6 +50,7 @@
   - `GET /stats`
   - `GET /samples`
   - `POST /analyze`
+  - `POST /analyze/sample`
   - `POST /similar`
   - `POST /predict`
 - Verified the Flutter Linux client still analyzes and builds against the real dataset-backed backend.
@@ -78,6 +81,7 @@ Observed behavior:
 - Duplicate analysis found `73` exact duplicate groups and `99` near-duplicate groups.
 - The real-data classifier trained successfully with `0.8000` accuracy and `0.7993` macro-F1.
 - Real-data backend validation on port `8012` returned `200` from `GET /health`, `GET /stats`, `GET /samples`, `POST /analyze`, `POST /similar`, and `POST /predict`.
+- The new one-click demo path returned a real result from `POST /analyze/sample`, including classification, cluster assignment, and 5 nearest-neighbor images.
 - The Linux Flutter app launched successfully against the real backend using `API_BASE_URL=http://127.0.0.1:8012`.
 
 ## Remaining

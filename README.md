@@ -6,7 +6,7 @@ The repo contains:
 
 - a shared Python package for data ingestion, EDA, embeddings, clustering, and inference
 - a FastAPI backend for local analysis APIs
-- a Flutter app for image upload, results, and dataset insights
+- a Flutter app for one-tap sample demos, image upload, results, and dataset insights
 - documentation, automation, and validation scripts
 
 ## Repository Layout
@@ -115,6 +115,7 @@ The backend serves:
 - `GET /stats`
 - `GET /samples`
 - `POST /analyze`
+- `POST /analyze/sample`
 - `POST /similar`
 - `POST /predict` when a classifier artifact exists
 
@@ -131,6 +132,13 @@ Linux desktop is the primary verified target in this environment:
 ```bash
 make flutter
 ```
+
+The home screen now supports immediate dataset-backed demo actions:
+
+- `Use Random Dataset Image`
+- `Try Sample Demo`
+- clickable sample thumbnails that run live backend analysis
+- `View Example Result` for a one-click results flow
 
 Static checks:
 
@@ -182,6 +190,7 @@ Validation results on this machine:
 - The repo-local dataset zip was copied into `data/raw/brainrot_dataset.zip`, extracted into `data/raw/brainrot_dataset/`, and processed successfully.
 - The real dataset produced `1000` valid images across `5` balanced classes.
 - FastAPI responded successfully with real dataset artifacts on `/health`, `/stats`, `/samples`, `/analyze`, `/similar`, and `/predict`.
+- The dataset-backed demo route `/analyze/sample` returned real classification, cluster, and similarity results from indexed samples.
 - The classifier trained cleanly on the real dataset and reached `0.8000` accuracy with `0.7993` macro-F1.
 - `flutter run -d linux --dart-define=API_BASE_URL=http://127.0.0.1:8012` launched successfully against the real dataset-backed backend.
 - Android SDK bootstrap succeeded, but `flutter build apk --debug` is still blocked by the read-only Arch-packaged Flutter SDK attempting to write Kotlin session data inside `/usr/lib/flutter`.

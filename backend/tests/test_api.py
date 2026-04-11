@@ -47,6 +47,20 @@ class StubRuntime:
             "upload_sha256": "deadbeef",
         }
 
+    def analyze_sample(self, raw_relative_path: str):
+        return {
+            "filename": raw_relative_path.rsplit("/", maxsplit=1)[-1],
+            "width": 64,
+            "height": 64,
+            "format": "JPEG",
+            "brightness": 120.5,
+            "contrast": 33.1,
+            "cluster_id": 1,
+            "classification": {"label": "alpha", "confidence": 0.88},
+            "similar_images": self.get_samples(),
+            "upload_sha256": "samplehash",
+        }
+
     def similar_bytes(self, content: bytes, filename: str | None = None):
         return {
             "filename": filename or "upload.jpg",
@@ -77,6 +91,17 @@ def test_analyze_route():
     )
     assert response.status_code == 200
     assert response.json()["classification"]["label"] == "alpha"
+
+
+def test_analyze_sample_route():
+    client = TestClient(create_app(runtime=StubRuntime()))
+    response = client.post(
+        "/analyze/sample",
+        json={"raw_relative_path": "brainrot_dataset/alpha/sample.jpg"},
+    )
+    assert response.status_code == 200
+    assert response.json()["filename"] == "sample.jpg"
+    assert response.json()["upload_sha256"] == "samplehash"
 
 
 def test_predict_route():

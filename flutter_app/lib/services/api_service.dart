@@ -31,7 +31,9 @@ class ApiService {
   Future<BackendHealth> fetchHealth() async {
     final response = await http.get(Uri.parse('$baseUrl/health'));
     _throwIfError(response);
-    return BackendHealth.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    return BackendHealth.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   Future<DatasetStats> fetchStats() async {
@@ -41,13 +43,40 @@ class ApiService {
     return DatasetStats.fromJson(payload['payload'] as Map<String, dynamic>);
   }
 
+  Future<List<SimilarImage>> fetchSamples({int limit = 10}) async {
+    final response = await http.get(Uri.parse('$baseUrl/samples?limit=$limit'));
+    _throwIfError(response);
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    final items = (payload['items'] as List<dynamic>?) ?? const <dynamic>[];
+    return items
+        .map((item) => SimilarImage.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<AnalysisResult> analyzeImage(XFile file) async {
-    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/analyze'));
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/analyze'),
+    );
     request.files.add(await http.MultipartFile.fromPath('file', file.path));
     final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
     _throwIfError(response);
-    return AnalysisResult.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    return AnalysisResult.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<AnalysisResult> analyzeSample(String rawRelativePath) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/analyze/sample'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'raw_relative_path': rawRelativePath}),
+    );
+    _throwIfError(response);
+    return AnalysisResult.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   void _throwIfError(http.Response response) {

@@ -14,7 +14,11 @@ class ResultsScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: const Text('Results')),
           body: result == null
-              ? const Center(child: Text('Run an analysis from the preview screen first.'))
+              ? const Center(
+                  child: Text(
+                    'Run an analysis from the home or preview screen first.',
+                  ),
+                )
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -28,19 +32,30 @@ class ResultsScreen extends StatelessWidget {
                             children: [
                               Text(
                                 'Analysis Summary',
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                               const SizedBox(height: 12),
                               Wrap(
                                 spacing: 12,
                                 runSpacing: 12,
                                 children: [
-                                  _ResultChip(label: 'Cluster', value: '${result.clusterId ?? 'N/A'}'),
-                                  _ResultChip(label: 'Format', value: result.format),
-                                  _ResultChip(label: 'Brightness', value: result.brightness.toStringAsFixed(1)),
-                                  _ResultChip(label: 'Contrast', value: result.contrast.toStringAsFixed(1)),
+                                  _ResultChip(
+                                    label: 'Cluster',
+                                    value: '${result.clusterId ?? 'N/A'}',
+                                  ),
+                                  _ResultChip(
+                                    label: 'Format',
+                                    value: result.format,
+                                  ),
+                                  _ResultChip(
+                                    label: 'Brightness',
+                                    value: result.brightness.toStringAsFixed(1),
+                                  ),
+                                  _ResultChip(
+                                    label: 'Contrast',
+                                    value: result.contrast.toStringAsFixed(1),
+                                  ),
                                 ],
                               ),
                               const SizedBox(height: 16),
@@ -52,19 +67,24 @@ class ResultsScreen extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Classification',
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
-                                            ?.copyWith(fontWeight: FontWeight.w700),
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
                                         '${result.classification!.label} • ${(result.classification!.confidence * 100).toStringAsFixed(1)}%',
-                                        style: Theme.of(context).textTheme.bodyLarge,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyLarge,
                                       ),
                                     ],
                                   ),
@@ -81,9 +101,8 @@ class ResultsScreen extends StatelessWidget {
                       const SizedBox(height: 20),
                       Text(
                         'Most Similar Dataset Images',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 12),
                       SizedBox(
@@ -92,42 +111,67 @@ class ResultsScreen extends StatelessWidget {
                           scrollDirection: Axis.horizontal,
                           itemBuilder: (context, index) {
                             final image = result.similarImages[index];
-                            final thumbnailUrl = state.resolveUrl(image.thumbnailUrl);
+                            final thumbnailUrl = state.resolveUrl(
+                              image.thumbnailUrl,
+                            );
                             return SizedBox(
                               width: 220,
                               child: Card(
                                 child: Padding(
                                   padding: const EdgeInsets.all(12),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
                                           child: thumbnailUrl.isEmpty
                                               ? const ColoredBox(
                                                   color: Color(0xFFE8D8C9),
-                                                  child: Center(child: Icon(Icons.image_not_supported_outlined)),
+                                                  child: Center(
+                                                    child: Icon(
+                                                      Icons
+                                                          .image_not_supported_outlined,
+                                                    ),
+                                                  ),
                                                 )
                                               : Image.network(
                                                   thumbnailUrl,
                                                   width: double.infinity,
                                                   fit: BoxFit.cover,
-                                                  errorBuilder: (context, error, stackTrace) => const ColoredBox(
-                                                    color: Color(0xFFE8D8C9),
-                                                    child: Center(
-                                                      child: Icon(Icons.broken_image_outlined),
-                                                    ),
-                                                  ),
+                                                  errorBuilder:
+                                                      (
+                                                        context,
+                                                        error,
+                                                        stackTrace,
+                                                      ) => const ColoredBox(
+                                                        color: Color(
+                                                          0xFFE8D8C9,
+                                                        ),
+                                                        child: Center(
+                                                          child: Icon(
+                                                            Icons
+                                                                .broken_image_outlined,
+                                                          ),
+                                                        ),
+                                                      ),
                                                 ),
                                         ),
                                       ),
                                       const SizedBox(height: 12),
                                       Text(
-                                        image.label ?? image.filename ?? 'Dataset image',
+                                        image.label ??
+                                            image.filename ??
+                                            'Dataset image',
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
                                               fontWeight: FontWeight.w700,
                                             ),
                                       ),
@@ -141,7 +185,8 @@ class ResultsScreen extends StatelessWidget {
                               ),
                             );
                           },
-                          separatorBuilder: (context, index) => const SizedBox(width: 12),
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(width: 12),
                           itemCount: result.similarImages.length,
                         ),
                       ),
@@ -149,7 +194,9 @@ class ResultsScreen extends StatelessWidget {
                       FilledButton.tonalIcon(
                         onPressed: () {
                           Navigator.of(context).push(
-                            MaterialPageRoute<void>(builder: (_) => const InsightsScreen()),
+                            MaterialPageRoute<void>(
+                              builder: (_) => const InsightsScreen(),
+                            ),
                           );
                         },
                         icon: const Icon(Icons.query_stats_outlined),
@@ -185,7 +232,9 @@ class _ResultChip extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
         ],
       ),

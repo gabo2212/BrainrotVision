@@ -91,14 +91,18 @@ class DatasetStats {
       corruptImages: (json['corrupt_images'] as num?)?.toInt() ?? 0,
       hasLabels: json['has_labels'] as bool? ?? false,
       artifactReady: json['artifact_ready'] as bool? ?? false,
-      exactDuplicateGroups: (json['exact_duplicate_groups'] as num?)?.toInt() ?? 0,
-      nearDuplicateGroups: (json['near_duplicate_groups'] as num?)?.toInt() ?? 0,
+      exactDuplicateGroups:
+          (json['exact_duplicate_groups'] as num?)?.toInt() ?? 0,
+      nearDuplicateGroups:
+          (json['near_duplicate_groups'] as num?)?.toInt() ?? 0,
       formatDistribution: parseDistribution('format_distribution'),
       labelDistribution: parseDistribution('label_distribution'),
       clusterDistribution: parseDistribution('kmeans_cluster_distribution'),
       width: NumericSummary.fromJson(json['width'] as Map<String, dynamic>?),
       height: NumericSummary.fromJson(json['height'] as Map<String, dynamic>?),
-      aspectRatio: NumericSummary.fromJson(json['aspect_ratio'] as Map<String, dynamic>?),
+      aspectRatio: NumericSummary.fromJson(
+        json['aspect_ratio'] as Map<String, dynamic>?,
+      ),
     );
   }
 }
@@ -109,6 +113,7 @@ class SimilarImage {
     required this.label,
     required this.distance,
     required this.kmeansCluster,
+    required this.rawRelativePath,
     required this.thumbnailUrl,
     required this.rawUrl,
   });
@@ -117,6 +122,7 @@ class SimilarImage {
   final String? label;
   final double? distance;
   final int? kmeansCluster;
+  final String? rawRelativePath;
   final String? thumbnailUrl;
   final String? rawUrl;
 
@@ -126,6 +132,7 @@ class SimilarImage {
       label: json['label'] as String?,
       distance: (json['distance'] as num?)?.toDouble(),
       kmeansCluster: (json['kmeans_cluster'] as num?)?.toInt(),
+      rawRelativePath: json['raw_relative_path'] as String?,
       thumbnailUrl: json['thumbnail_url'] as String?,
       rawUrl: json['raw_url'] as String?,
     );
@@ -133,10 +140,7 @@ class SimilarImage {
 }
 
 class ClassificationResult {
-  const ClassificationResult({
-    required this.label,
-    required this.confidence,
-  });
+  const ClassificationResult({required this.label, required this.confidence});
 
   final String label;
   final double confidence;
@@ -185,10 +189,15 @@ class AnalysisResult {
       clusterId: (json['cluster_id'] as num?)?.toInt(),
       classification: json['classification'] == null
           ? null
-          : ClassificationResult.fromJson(json['classification'] as Map<String, dynamic>),
-      similarImages: ((json['similar_images'] as List<dynamic>?) ?? const <dynamic>[])
-          .map((item) => SimilarImage.fromJson(item as Map<String, dynamic>))
-          .toList(),
+          : ClassificationResult.fromJson(
+              json['classification'] as Map<String, dynamic>,
+            ),
+      similarImages:
+          ((json['similar_images'] as List<dynamic>?) ?? const <dynamic>[])
+              .map(
+                (item) => SimilarImage.fromJson(item as Map<String, dynamic>),
+              )
+              .toList(),
       uploadSha256: json['upload_sha256'] as String?,
     );
   }

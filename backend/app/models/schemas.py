@@ -44,6 +44,10 @@ class AnalyzeResponse(BaseModel):
     upload_sha256: str | None = None
 
 
+class AnalyzeSampleRequest(BaseModel):
+    raw_relative_path: str
+
+
 class SimilarResponse(BaseModel):
     filename: str
     cluster_id: int | None = None

@@ -33,6 +33,30 @@ class FakeApiService extends ApiService {
       aspectRatio: NumericSummary(mean: 1, median: 1, min: 0.5, max: 1.8),
     );
   }
+
+  @override
+  Future<List<SimilarImage>> fetchSamples({int limit = 10}) async {
+    return const [
+      SimilarImage(
+        filename: 'demo-1.jpg',
+        label: 'tralalero_tralala',
+        distance: 0.0,
+        kmeansCluster: 1,
+        rawRelativePath: 'brainrot_dataset/tralalero_tralala/demo-1.jpg',
+        thumbnailUrl: '/thumbnails/demo-1.jpg',
+        rawUrl: '/raw/brainrot_dataset/tralalero_tralala/demo-1.jpg',
+      ),
+      SimilarImage(
+        filename: 'demo-2.jpg',
+        label: 'tung_tung_sahur',
+        distance: 0.1,
+        kmeansCluster: 2,
+        rawRelativePath: 'brainrot_dataset/tung_tung_sahur/demo-2.jpg',
+        thumbnailUrl: '/thumbnails/demo-2.jpg',
+        rawUrl: '/raw/brainrot_dataset/tung_tung_sahur/demo-2.jpg',
+      ),
+    ];
+  }
 }
 
 void main() {
@@ -41,7 +65,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('BrainrotVision'), findsOneWidget);
+    expect(find.text('Use Random Dataset Image'), findsOneWidget);
+    expect(find.text('Try Sample Demo'), findsOneWidget);
     expect(find.text('Choose From Gallery'), findsOneWidget);
+    expect(find.text('Live Sample Gallery'), findsOneWidget);
     expect(find.text('Dataset Insights'), findsOneWidget);
   });
 }

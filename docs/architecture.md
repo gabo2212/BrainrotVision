@@ -48,4 +48,5 @@ This real dataset is balanced at 200 images per class, which is strong enough to
 - `provider` is used for simple app-wide state.
 - `http` is used for backend communication.
 - `image_picker` handles gallery and camera flows.
+- The home screen also exposes dataset-native demo actions so first-time users can trigger real analysis from indexed sample images without manually uploading a file.
 - Linux desktop is the primary validated target in the current environment; Android is best-effort and depends on local SDK bootstrap.

@@ -3,7 +3,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from backend.app.dependencies import get_runtime
-from backend.app.models.schemas import AnalyzeResponse, ClassificationResponse, SimilarResponse
+from backend.app.models.schemas import (
+    AnalyzeResponse,
+    AnalyzeSampleRequest,
+    ClassificationResponse,
+    SimilarResponse,
+)
 
 
 router = APIRouter(tags=["analysis"])
@@ -27,6 +32,31 @@ async def analyze(
             detail="Artifacts are not ready. Run `make metadata`, `make eda`, and `make artifacts` first.",
         )
     payload = runtime.analyze_bytes(await file.read(), filename=file.filename)
+    return _normalize_analyze_payload(payload)
+
+
+@router.post("/analyze/sample", response_model=AnalyzeResponse)
+async def analyze_sample(
+    request: AnalyzeSampleRequest,
+    runtime=Depends(get_runtime),
+) -> AnalyzeResponse:
+    if not runtime.ready:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Artifacts are not ready. Run `make metadata`, `make eda`, and `make artifacts` first.",
+        )
+    try:
+        payload = runtime.analyze_sample(request.raw_relative_path)
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc),
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
     return _normalize_analyze_payload(payload)
 
 
